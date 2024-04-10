@@ -7,8 +7,9 @@ const process = require("process");
 // The base URL for Pinterest search
 const baseUrl = "https://id.pinterest.com/search/pins/?q=";
 
-// Get the search query from the command line
+// Get the search query and number of images to download from the command line
 const query = process.argv[2];
+const numImages = parseInt(process.argv[3]);
 
 // Construct the URL for the search query
 const url = baseUrl + encodeURIComponent(query);
@@ -23,7 +24,11 @@ axios
     const pins = $(".Pin");
 
     // Loop through each pin and download its image
+    let imagesDownloaded = 0;
     pins.each((index, pin) => {
+      if (imagesDownloaded >= numImages) {
+        return;
+      }
       const pinUrl = $(pin).find(".PinInner a").attr("href");
       axios
         .get(pinUrl)
@@ -42,6 +47,10 @@ axios
             .then((response) => {
               response.data.pipe(fs.createWriteStream(imagePath));
               console.log(`Downloaded image ${imageName}`);
+              imagesDownloaded++;
+              if (imagesDownloaded >= numImages) {
+                console.log(`Downloaded ${numImages} images`);
+              }
             })
             .catch((error) => {
               console.error(`Error downloading image: ${error.message}`);
